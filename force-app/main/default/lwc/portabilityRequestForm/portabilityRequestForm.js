@@ -1,8 +1,9 @@
 import { LightningElement, wire, api, track } from "lwc";
 import { ShowToastEvent } from "lightning/platformShowToastEvent";
+import { MessageContext, publish } from "lightning/messageService";
 import getPolicyDetails from "@salesforce/apex/PortabilityPolicyService.getPolicyDetails";
 import createDSR from "@salesforce/apex/PortabilityPolicyService.createDSR";
-
+import DSRMC from "@salesforce/messageChannel/DSRMessageChannel__c";
 const OBJECT_OPTIONS = [
   { label: "Account", value: "Account" },
   { label: "Contact", value: "Contact" },
@@ -38,13 +39,15 @@ export default class PorabilityRequestForm extends LightningElement {
   error;
   @track policyOptions;
 
+  @wire(MessageContext)
+  messageContext;
+
   @wire(getPolicyDetails)
   wiredPolicies({ data, error }) {
     if (data) {
       this.policyOptions = data.map((policy) => {
         return { label: policy.DeveloperName, value: policy.DeveloperName };
       });
-      console.log(this.policyOptions);
     } else if (error) {
       this.policyOptions = undefined;
       this.error = error;
@@ -57,13 +60,11 @@ export default class PorabilityRequestForm extends LightningElement {
   }
   handlePolicyOptionChange(event) {
     this.selectedPolicyName = event.target.value;
-    console.log(this.selectedPolicyName);
   }
 
   handleObjectTypeChange(event) {
     this.selectedObjectType = event.target.value;
     this.selectedIcon = ICONS[this.selectedObjectType];
-    console.log(this.selectedObjectType);
   }
 
   onRecordSelection(event) {
@@ -74,13 +75,17 @@ export default class PorabilityRequestForm extends LightningElement {
   sendRequest() {
     createDSR({
       dataSubjectId: this.selectedRecordId,
-      policyName: this.selectedPolicyName
+      policyName: this.selectedPolicyName,
+      selectedObjectName: this.selectedObjectType,
+      subjectName: this.selectedRecordName
     })
-      .then(() => {
+      .then((result) => {
+        console.log(result);
         this.error = undefined;
         this.selectedRecordId = undefined;
         this.selectedRecordName = undefined;
         this.querySelector();
+        publish(this.messageContext, DSRMC, { msg: "New DSR Created" });
         const evt = new ShowToastEvent({
           title: DSR_SUCCESS_TITLE,
           message: DSR_SUCCESS_MESSAGE,

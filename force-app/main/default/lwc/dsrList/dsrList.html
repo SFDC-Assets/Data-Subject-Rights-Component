@@ -1,0 +1,21 @@
+<template>
+  <lightning-card
+    title="Data Subject Request List"
+    icon-name="standard:work_type_group"
+  >
+    <div class="slds-var-p-around_medium">
+      <div class="slds-scrollable_y">
+        <lightning-datatable
+          key-field="Id"
+          data={requests}
+          columns={columns}
+          hide-checkbox-column="true"
+          sorted-direction="desc"
+          column-widths-mode="true"
+          suppress-bottom-bar="true"
+        >
+        </lightning-datatable>
+      </div>
+    </div>
+  </lightning-card>
+</template>

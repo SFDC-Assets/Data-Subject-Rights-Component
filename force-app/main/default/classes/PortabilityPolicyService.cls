@@ -22,18 +22,27 @@ public with sharing class PortabilityPolicyService {
     }
 
     @AuraEnabled
-    public static void createDSR(String dataSubjectId, String policyName){
+    public static void createDSR(String dataSubjectId, String policyName, String selectedObjectName, String subjectName){
         try {
-            
-            submitDSAR(dataSubjectId, policyName);
+            submitDSAR(dataSubjectId, policyName, selectedObjectName, subjectName);
+        } catch (Exception e) {
+            throw new AuraHandledException(e.getMessage());
+        }
+    }
 
+    @AuraEnabled
+    public static List<Data_Subject_Request__c> getAllDSRs(){
+        try {
+            List<Data_Subject_Request__c> requests = new List<Data_Subject_Request__c>();
+            requests = [SELECT Id, Status__c, Data_Subject_Id__c, Policy_File_Id__c , Policy_File_URL__c , Policy_Name__c , Name, Data_Subject_Name__c, Data_Subject_Type__c FROM Data_Subject_Request__c];
+            return requests;
         } catch (Exception e) {
             throw new AuraHandledException(e.getMessage());
         }
     }
 
     @future(callout=true)
-    private static void submitDSAR(String dataSubjectId, String policyName){
+    private static void submitDSAR(String dataSubjectId, String policyName, String selectedObjectName, String subjectName){
         try{
         String body =  '{"dataSubjectId" : "'+dataSubjectId+'", "policyName" : "'+policyName+'"}';   
         Http http = new Http();
@@ -48,6 +57,8 @@ public with sharing class PortabilityPolicyService {
         Data_Subject_Request__c dsr = new Data_Subject_Request__c();
         dsr.Data_Subject_Id__c = dataSubjectId;
         dsr.Policy_Name__c = policyName;
+        dsr.Data_Subject_Name__c = subjectName;
+        dsr.Data_Subject_Type__c = selectedObjectName;
         
 
         if(response.getStatusCode()==200){  
@@ -71,12 +82,11 @@ public with sharing class PortabilityPolicyService {
             System.debug(' httpResponse ' + response.getBody() ); 
             throw new CalloutException( response.getBody() ); 
         }
-      
     } catch (Exception e){
         System.debug(e);
         throw e;
     }
-
-
  }
+
+
 }
