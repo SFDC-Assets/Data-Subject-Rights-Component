@@ -1,0 +1,83 @@
+<template>
+  <lightning-card
+    title="Execute Portability Request"
+    icon-name="standard:person_account"
+  >
+    <div class="slds-var-p-around_medium">
+      <lightning-layout multiple-rows="true">
+        <lightning-layout-item
+          size="8"
+          medium-device-size="10"
+          large-device-size="12"
+          flexibility="grow"
+          padding="around-small"
+        >
+          <lightning-combobox
+            label="Select Policy"
+            name="policy"
+            placeholder="Select a Portability Policy"
+            value={selectedPolicyName}
+            options={policyOptions}
+            onchange={handlePolicyOptionChange}
+            message-when-value-missing="Please select a Policy"
+            required="true"
+          ></lightning-combobox>
+        </lightning-layout-item>
+        <template if:true={selectedPolicyName}>
+          <lightning-layout-item
+            size="8"
+            medium-device-size="10"
+            large-device-size="12"
+            flexibility="grow"
+            padding="around-small"
+          >
+            <lightning-combobox
+              label="Select Object"
+              name="policy"
+              placeholder="Select an Object"
+              field-level-help="The selected object should be part of the object tree of the selected policy"
+              value={selectedObjectType}
+              options={objectOptions}
+              onchange={handleObjectTypeChange}
+              required="true"
+              message-when-value-missing="Please select an Object Type"
+            ></lightning-combobox>
+          </lightning-layout-item>
+        </template>
+        <template if:true={selectedObjectType}>
+          <lightning-layout-item
+            size="8"
+            medium-device-size="10"
+            large-device-size="12"
+            flexibility="grow"
+            padding="around-small"
+          >
+            <c-object-look-up
+              lookup-label="Search Records"
+              icon-name={selectedIcon}
+              object-name={selectedObjectType}
+              onrecordselection={onRecordSelection}
+            ></c-object-look-up>
+          </lightning-layout-item>
+        </template>
+        <template if:true={selectedRecordId}>
+          <lightning-layout-item
+            size="8"
+            medium-device-size="10"
+            large-device-size="12"
+            flexibility="grow"
+            padding="around-small"
+          >
+            <lightning-button
+              variant="brand"
+              label="Send"
+              title="Send Request"
+              onclick={sendRequest}
+              class="slds-var-m-left_x-small"
+            ></lightning-button>
+          </lightning-layout-item>
+        </template>
+      </lightning-layout>
+    </div>
+  </lightning-card>
+</template>

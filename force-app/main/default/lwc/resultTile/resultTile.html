@@ -1,0 +1,20 @@
+<template>
+  <template if:true={result}>
+    <a href="#" onclick={selectClick}>
+      <lightning-layout vertical-align="center">
+        <lightning-layout-item>
+          <lightning-avatar
+            variant="square"
+            fallback-icon-name="standard:person_account"
+            alternative-text={result.name}
+            class="slds-var-m-right_small"
+          ></lightning-avatar>
+        </lightning-layout-item>
+        <lightning-layout-item padding="around-small">
+          <p>{result.Name}</p>
+        </lightning-layout-item>
+      </lightning-layout>
+    </a>
+  </template>
+  <template if:false={result}><p>No data available.</p></template>
+</template>
