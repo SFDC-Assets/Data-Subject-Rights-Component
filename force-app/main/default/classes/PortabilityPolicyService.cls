@@ -22,27 +22,63 @@ public with sharing class PortabilityPolicyService {
     }
 
     @AuraEnabled
-    public static void createDSR(String dataSubjectId, String policyName, String selectedObjectName, String subjectName){
+    public static String createDSR(String dataSubjectId, String policyName, String selectedObjectName, String subjectName){
         try {
-            submitDSAR(dataSubjectId, policyName, selectedObjectName, subjectName);
+            Data_Subject_Request__c dsr = new Data_Subject_Request__c();
+            dsr.Data_Subject_Id__c = dataSubjectId;
+            dsr.Policy_Name__c = policyName;
+            dsr.Data_Subject_Name__c = subjectName;
+            dsr.Data_Subject_Type__c = selectedObjectName;
+            dsr.Status__c = 'Submitted';
+            insert dsr;
+            submitDSAR(dataSubjectId, policyName, dsr.Id);
+            return dsr.Id;
         } catch (Exception e) {
             throw new AuraHandledException(e.getMessage());
         }
     }
 
-    @AuraEnabled
+    @AuraEnabled(cacheable=true)
     public static List<Data_Subject_Request__c> getAllDSRs(){
         try {
             List<Data_Subject_Request__c> requests = new List<Data_Subject_Request__c>();
-            requests = [SELECT Id, Status__c, Data_Subject_Id__c, Policy_File_Id__c , Policy_File_URL__c , Policy_Name__c , Name, Data_Subject_Name__c, Data_Subject_Type__c FROM Data_Subject_Request__c];
+            requests = [SELECT Id, Status__c, Data_Subject_Id__c, Policy_File_Id__c , Policy_File_URL__c , Policy_Name__c , Name, Data_Subject_Name__c, Data_Subject_Type__c, CreatedDate FROM Data_Subject_Request__c ORDER BY CreatedDate DESC];
+            for(Data_Subject_Request__c dsar : requests){
+                if(dsar.Status__c!='Completed'){
+                    dsar.Policy_File_URL__c='';
+                }
+            }
             return requests;
         } catch (Exception e) {
             throw new AuraHandledException(e.getMessage());
         }
     }
 
+    @AuraEnabled
+    public static void deleteAllDSRs(){
+        try {
+            List<Data_Subject_Request__c> requests = new List<Data_Subject_Request__c>();
+            requests = [SELECT Id FROM Data_Subject_Request__c];
+            delete requests;
+        } catch (Exception e) {
+            throw new AuraHandledException(e.getMessage());
+        }
+    }
+
+    @AuraEnabled
+    public static void deleteDSR(String recordId){
+        try {
+            Data_Subject_Request__c request = new Data_Subject_Request__c();
+            request.Id = recordId;
+            delete request;
+        } catch (Exception e) {
+            throw new AuraHandledException(e.getMessage());
+        }
+    }
+
+
     @future(callout=true)
-    private static void submitDSAR(String dataSubjectId, String policyName, String selectedObjectName, String subjectName){
+    private static void submitDSAR(String dataSubjectId, String policyName, String dsrId){
         try{
         String body =  '{"dataSubjectId" : "'+dataSubjectId+'", "policyName" : "'+policyName+'"}';   
         Http http = new Http();
@@ -55,12 +91,7 @@ public with sharing class PortabilityPolicyService {
         request.setBody(body);
         HttpResponse response = http.send(request);
         Data_Subject_Request__c dsr = new Data_Subject_Request__c();
-        dsr.Data_Subject_Id__c = dataSubjectId;
-        dsr.Policy_Name__c = policyName;
-        dsr.Data_Subject_Name__c = subjectName;
-        dsr.Data_Subject_Type__c = selectedObjectName;
-        
-
+        dsr.Id = dsrId;
         if(response.getStatusCode()==200){  
             Map<String, Object> o = (Map<String, Object>) JSON.deserializeUntyped(response.getBody());
             if(o.get('status') != 'Failure'){
@@ -68,25 +99,54 @@ public with sharing class PortabilityPolicyService {
                 dsr.Status__c = (String)result.get('policyFileStatus');
                 dsr.Policy_File_URL__c = (String)result.get('policyFileUrl');
                 dsr.Policy_File_Id__c = (String)result.get('policyFileId');
-                
+                update dsr;
+                Data_Subject_Request_Event__e dsrEvent = new Data_Subject_Request_Event__e();
+                dsrEvent.DSR_ID__c = dsrId;
+                Database.SaveResult sr = Eventbus.publish(dsrEvent);
+                if(sr.getErrors().size() > 0){
+                    String errorMessage = '';
+                    Boolean isError = false;
+                    for(Database.Error err : sr.getErrors()) {
+                        if((err.getStatusCode()+'')== 'OPERATION_ENQUEUED'){
+                            isError = false;
+                            break;
+                        } else {
+                            errorMessage += err.getStatusCode() +' - ' +err.getMessage()+'\n';
+                            isError = true;
+                    }
+
+                    }
+                    if(isError){
+                        dsr.Status__c = 'Failed';
+                        update dsr;
+                        throw new EventObjectException(errorMessage);
+                    }
+                }
+               
             } else {
                 dsr.Status__c = 'Failed';
-                System.debug(' httpResponse ' + response.getBody() ); 
+                update dsr;
+                Data_Subject_Request_Event__e dsrEvent = new Data_Subject_Request_Event__e();
+                dsrEvent.DSR_ID__c = dsrId;
+                dsrEvent.DSR_ID__c = dsrId;
+                Database.SaveResult sr = Eventbus.publish(dsrEvent);
                 throw new CalloutException( response.getBody() ); 
             }
-            insert dsr;
         }
         else {
             dsr.Status__c = 'Failed';
-            insert dsr;
+            update dsr;
+            Data_Subject_Request_Event__e dsrEvent = new Data_Subject_Request_Event__e();
+            dsrEvent.DSR_ID__c = dsrId;
+            dsrEvent.DSR_ID__c = dsrId;
+            Database.SaveResult sr = Eventbus.publish(dsrEvent);
             System.debug(' httpResponse ' + response.getBody() ); 
             throw new CalloutException( response.getBody() ); 
         }
     } catch (Exception e){
         System.debug(e);
-        throw e;
+        throw new AuraHandledException(e.getMessage());
     }
  }
-
 
 }

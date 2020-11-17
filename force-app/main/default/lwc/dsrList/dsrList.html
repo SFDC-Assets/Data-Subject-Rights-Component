@@ -3,16 +3,27 @@
     title="Data Subject Request List"
     icon-name="standard:work_type_group"
   >
+    <template if:true={recordsAvailable}>
+      <lightning-button
+        slot="actions"
+        label="Delete All"
+        onclick={deleteAll}
+        variant="destructive-text"
+      ></lightning-button>
+    </template>
     <div class="slds-var-p-around_medium">
       <div class="slds-scrollable_y">
         <lightning-datatable
           key-field="Id"
-          data={requests}
+          data={requests.data}
           columns={columns}
           hide-checkbox-column="true"
           sorted-direction="desc"
           column-widths-mode="true"
           suppress-bottom-bar="true"
+          show-row-number-column="true"
+          is-loading={isLoading}
+          onrowaction={refreshRecord}
         >
         </lightning-datatable>
       </div>
