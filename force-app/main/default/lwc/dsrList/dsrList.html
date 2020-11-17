@@ -1,6 +1,6 @@
 <template>
   <lightning-card
-    title="Data Subject Request List"
+    title="Data Subject Access Request List"
     icon-name="standard:work_type_group"
   >
     <template if:true={recordsAvailable}>
@@ -23,7 +23,7 @@
           suppress-bottom-bar="true"
           show-row-number-column="true"
           is-loading={isLoading}
-          onrowaction={refreshRecord}
+          onrowaction={handleRowActions}
         >
         </lightning-datatable>
       </div>

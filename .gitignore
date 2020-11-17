@@ -15,6 +15,7 @@ coverage/
 # SOQL Query Results
 **/scripts/soql/query-results
 
+package-lock.json
 # Logs
 logs
 *.log
@@ -36,3 +37,5 @@ Thumbs.db
 ehthumbs.db
 [Dd]esktop.ini
 $RECYCLE.BIN/
+
+

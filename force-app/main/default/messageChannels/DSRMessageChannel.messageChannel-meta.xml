@@ -1,6 +1,7 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <LightningMessageChannel xmlns="http://soap.sforce.com/2006/04/metadata">
-    <description>This is the event that lets other components know that a new DSR was created</description>
+    <description
+  >This is the event that lets other components know that a new DSR was created</description>
     <isExposed>true</isExposed>
     <lightningMessageFields>
         <description>Message to send to other component</description>

@@ -2,6 +2,7 @@ import { LightningElement, wire } from "lwc";
 import getAllDSRs from "@salesforce/apex/PortabilityPolicyService.getAllDSRs";
 import deleteAllDSRs from "@salesforce/apex/PortabilityPolicyService.deleteAllDSRs";
 import deleteDSR from "@salesforce/apex/PortabilityPolicyService.deleteDSR";
+import updateStatus from "@salesforce/apex/PortabilityPolicyService.updateStatus";
 import DSRMC from "@salesforce/messageChannel/DSRMessageChannel__c";
 import { refreshApex } from "@salesforce/apex";
 import { ShowToastEvent } from "lightning/platformShowToastEvent";
@@ -13,36 +14,69 @@ import {
 } from "lightning/messageService";
 const VARIANT_OPTIONS = {
   error: "error",
-  success: "success"
+  success: "success",
+  info: "info"
 };
+const APEX_ERROR_TITLE = "Error Loading Data";
+const APEX_ERROR_MESSAGE = "Please check console for error message";
+
+const DATA_REFRESH_TITLE = "Data Updated";
+const DATA_REFRESH_MESSAGE = "One or more records have received updates!";
+
+const SUCCESS_TITLE = "Success!";
+
+const DELETE_ALL_MESSAGE = "All Requests deleted!";
+const DELETE_MESSAGE = "Request Deleted!";
+
+const UPDATE_MESSAGE = "Update Request Submitted!";
+
 const COLS = [
-  { label: "Request #", fieldName: "Name", editable: false },
+  {
+    label: "Request #",
+    fieldName: "Name",
+    editable: false,
+    hideDefaultActions: true,
+    sortable: false
+  },
   {
     label: "Subject Name",
     fieldName: "Data_Subject_Name__c",
     editable: false,
-    sortable: false
+    sortable: false,
+    hideDefaultActions: true
   },
   {
     label: " Subject Type",
     fieldName: "Data_Subject_Type__c",
     editable: false,
-    sortable: false
+    sortable: false,
+    hideDefaultActions: true
   },
-  { label: "Status", fieldName: "Status__c", editable: false, sortable: true },
+  {
+    label: "Status",
+    fieldName: "Status__c",
+    editable: false,
+    sortable: true,
+    hideDefaultActions: true
+  },
 
   {
     label: "Policy Name",
     fieldName: "Policy_Name__c",
     editable: false,
-    sortable: false
+    sortable: false,
+    hideDefaultActions: true
   },
   {
     label: "Policy File URL",
     fieldName: "Policy_File_URL__c",
     type: "url",
+    typeAttributes: {
+      target: "_blank"
+    },
     editable: false,
-    sortable: false
+    sortable: false,
+    hideDefaultActions: true
   },
   {
     type: "action",
@@ -63,10 +97,12 @@ const COLS = [
     }
   }
 ];
+
 export default class DsrList extends LightningElement {
   //requests;
   error;
 
+  refreshStates;
   isLoading = false;
   recordId;
 
@@ -75,7 +111,6 @@ export default class DsrList extends LightningElement {
     return COLS;
   }
   get recordsAvailable() {
-    console.log(this.requests);
     return this.hasRecords;
   }
   // wired message context
@@ -95,8 +130,8 @@ export default class DsrList extends LightningElement {
       this.hasRecords = false;
       this.isLoading = false;
       const evt = new ShowToastEvent({
-        title: "Error Loading Data",
-        message: "Please check console for error message",
+        title: APEX_ERROR_TITLE,
+        message: APEX_ERROR_MESSAGE,
         variant: VARIANT_OPTIONS.error
       });
       this.dispatchEvent(evt);
@@ -105,17 +140,25 @@ export default class DsrList extends LightningElement {
 
   subscription;
 
-  async refresh() {
+  async refresh(showMessage) {
     this.isLoading = true;
     try {
       await refreshApex(this.requests);
       this.isLoading = false;
+      if (showMessage) {
+        const evt = new ShowToastEvent({
+          title: DATA_REFRESH_TITLE,
+          message: DATA_REFRESH_MESSAGE,
+          variant: VARIANT_OPTIONS.info
+        });
+        this.dispatchEvent(evt);
+      }
     } catch (error) {
       this.error = error;
       this.isLoading = false;
       const evt = new ShowToastEvent({
-        title: "Error Loading Data",
-        message: "Please check console for error message",
+        title: APEX_ERROR_TITLE,
+        message: APEX_ERROR_MESSAGE,
         variant: VARIANT_OPTIONS.error
       });
       this.dispatchEvent(evt);
@@ -127,7 +170,7 @@ export default class DsrList extends LightningElement {
       DSRMC,
       (message) => {
         this.isLoading = true;
-        this.refresh(message);
+        this.refresh(true);
       },
       { scope: APPLICATION_SCOPE }
     );
@@ -141,21 +184,20 @@ export default class DsrList extends LightningElement {
     this.subscribeMC();
   }
 
-  refreshRecord(event) {
+  handleRowActions(event) {
     const recId = event.detail.row.Id;
     const actionName = event.detail.action.name;
     if (actionName === "refresh") {
-      // eslint-disable-next-line no-alert
-      alert(recId);
+      this.updateStatus(recId, event);
     } else if (actionName === "delete") {
       deleteDSR({ recordId: recId })
         .then(() => {
-          this.refresh();
+          this.refresh(false);
           this.isLoading = false;
           this.hasRecords = false;
           const evt = new ShowToastEvent({
-            title: "Success",
-            message: "Request Deleted!",
+            title: SUCCESS_TITLE,
+            message: DELETE_MESSAGE,
             variant: VARIANT_OPTIONS.success
           });
           this.dispatchEvent(evt);
@@ -165,8 +207,8 @@ export default class DsrList extends LightningElement {
           this.isLoading = false;
           console.log(this.error);
           const evt = new ShowToastEvent({
-            title: "Error in Processing",
-            message: "Please check console for error message",
+            title: APEX_ERROR_TITLE,
+            message: APEX_ERROR_MESSAGE,
             variant: VARIANT_OPTIONS.error
           });
           this.dispatchEvent(evt);
@@ -178,12 +220,12 @@ export default class DsrList extends LightningElement {
     this.isLoading = true;
     deleteAllDSRs()
       .then(() => {
-        this.refresh();
+        this.refresh(false);
         this.isLoading = false;
         this.hasRecords = false;
         const evt = new ShowToastEvent({
-          title: "Success",
-          message: "All Requests deleted!",
+          title: SUCCESS_TITLE,
+          message: DELETE_ALL_MESSAGE,
           variant: VARIANT_OPTIONS.success
         });
         this.dispatchEvent(evt);
@@ -195,6 +237,33 @@ export default class DsrList extends LightningElement {
         const evt = new ShowToastEvent({
           title: "Error in Processing",
           message: "Please check console for error message",
+          variant: VARIANT_OPTIONS.error
+        });
+        this.dispatchEvent(evt);
+      });
+  }
+
+  updateStatus(recordId, event) {
+    this.isLoading = true;
+    updateStatus({
+      recordId
+    })
+      .then((result) => {
+        this.error = undefined;
+        this.isLoading = false;
+        const evt = new ShowToastEvent({
+          title: SUCCESS_TITLE,
+          message: UPDATE_MESSAGE,
+          variant: VARIANT_OPTIONS.success
+        });
+        this.dispatchEvent(evt);
+      })
+      .catch((error) => {
+        this.error = error;
+        console.log(this.error);
+        const evt = new ShowToastEvent({
+          title: APEX_ERROR_TITLE,
+          message: APEX_ERROR_MESSAGE,
           variant: VARIANT_OPTIONS.error
         });
         this.dispatchEvent(evt);

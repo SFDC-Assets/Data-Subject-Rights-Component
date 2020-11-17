@@ -30,7 +30,7 @@ export default class ObjectLookUp extends LightningElement {
     this.searchKey = searchKey;
     this.getLookupResult();
   }
- 
+
   removeRecordOnLookup(event) {
     this.searchKey = "";
     this.selectedValue = null;
