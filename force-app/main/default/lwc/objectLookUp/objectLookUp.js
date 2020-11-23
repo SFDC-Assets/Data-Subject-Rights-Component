@@ -22,7 +22,7 @@ export default class ObjectLookUp extends LightningElement {
     this.selectedRecordId = event.target.dataset.key;
     this.selectedValue = event.target.dataset.name;
     this.searchKey = "";
-    this.onSeletedRecordUpdate();
+    this.onSelectedRecordUpdate();
   }
 
   handleKeyChange(event) {
@@ -36,7 +36,7 @@ export default class ObjectLookUp extends LightningElement {
     this.selectedValue = null;
     this.selectedRecordId = null;
     this.recordsList = null;
-    this.onSeletedRecordUpdate();
+    this.onSelectedRecordUpdate();
   }
 
   getLookupResult() {
@@ -69,7 +69,7 @@ export default class ObjectLookUp extends LightningElement {
     this.objectApiName = name;
     this.removeRecordOnLookup();
   }
-  onSeletedRecordUpdate() {
+  onSelectedRecordUpdate() {
     const passEventr = new CustomEvent("recordselection", {
       detail: {
         selectedRecordId: this.selectedRecordId,
