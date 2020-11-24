@@ -68,43 +68,35 @@ public with sharing class PortabilityPolicyService {
 
   @AuraEnabled(cacheable=true)
   public static List<Data_Subject_Request__c> getAllDSRs() {
-    try {
-      List<Data_Subject_Request__c> requests = new List<Data_Subject_Request__c>();
-      requests = [
-        SELECT
-          Id,
-          Status__c,
-          Data_Subject_Id__c,
-          Policy_File_Id__c,
-          Policy_File_URL__c,
-          Policy_Name__c,
-          Name,
-          Data_Subject_Name__c,
-          Data_Subject_Type__c,
-          CreatedDate
-        FROM Data_Subject_Request__c
-        ORDER BY CreatedDate DESC
-      ];
-      for (Data_Subject_Request__c dsar : requests) {
-        if (dsar.Status__c != 'Complete') {
-          dsar.Policy_File_URL__c = '';
-        }
+    List<Data_Subject_Request__c> requests = new List<Data_Subject_Request__c>();
+    requests = [
+      SELECT
+        Id,
+        Status__c,
+        Data_Subject_Id__c,
+        Policy_File_Id__c,
+        Policy_File_URL__c,
+        Policy_Name__c,
+        Name,
+        Data_Subject_Name__c,
+        Data_Subject_Type__c,
+        CreatedDate
+      FROM Data_Subject_Request__c
+      ORDER BY CreatedDate DESC
+    ];
+    for (Data_Subject_Request__c dsar : requests) {
+      if (dsar.Status__c != 'Complete') {
+        dsar.Policy_File_URL__c = '';
       }
-      return requests;
-    } catch (Exception e) {
-      throw new AuraHandledException(e.getMessage());
     }
+    return requests;
   }
 
   @AuraEnabled
   public static void deleteAllDSRs() {
-    try {
-      List<Data_Subject_Request__c> requests = new List<Data_Subject_Request__c>();
-      requests = [SELECT Id FROM Data_Subject_Request__c];
-      delete requests;
-    } catch (Exception e) {
-      throw new AuraHandledException(e.getMessage());
-    }
+    List<Data_Subject_Request__c> requests = new List<Data_Subject_Request__c>();
+    requests = [SELECT Id FROM Data_Subject_Request__c];
+    delete requests;
   }
 
   @AuraEnabled
@@ -119,6 +111,7 @@ public with sharing class PortabilityPolicyService {
   }
 
   @future(callout=true)
+  @TestVisible
   private static void submitDSAR(
     String dataSubjectId,
     String policyName,
@@ -131,55 +124,43 @@ public with sharing class PortabilityPolicyService {
         '", "policyName" : "' +
         policyName +
         '"}';
-      Http http = new Http();
-      HttpRequest request = new HttpRequest();
-      request.setMethod('POST');
-      request.setEndpoint(PORTABILITY_API_URL);
-      request.setHeader('Authorization', 'OAuth ' + UserInfo.getSessionId());
-      request.setHeader('Authorization', 'Bearer ' + UserInfo.getSessionID());
-      request.setHeader('Content-Type', 'application/json;charset=UTF-8');
-      request.setBody(body);
-      HttpResponse response = http.send(request);
+      HttpResponse response = executeCallout(body, 'POST', PORTABILITY_API_URL);
+
       Data_Subject_Request__c dsr = new Data_Subject_Request__c();
       dsr.Id = dsrId;
       if (response.getStatusCode() == 200) {
         Map<String, Object> o = (Map<String, Object>) JSON.deserializeUntyped(
           response.getBody()
         );
-        if (o.get('status') != 'Failure') {
-          Map<String, Object> result = (Map<String, Object>) o.get('result');
-          dsr.Status__c = (String) result.get('policyFileStatus');
-          dsr.Policy_File_URL__c = (String) result.get('policyFileUrl');
-          dsr.Policy_File_Id__c = (String) result.get('policyFileId');
-          update dsr;
-          Data_Subject_Request_Event__e dsrEvent = new Data_Subject_Request_Event__e();
-          dsrEvent.DSR_ID__c = dsrId;
-          Database.SaveResult sr = Eventbus.publish(dsrEvent);
-          if (sr.getErrors().size() > 0) {
-            String errorMessage = '';
-            Boolean isError = false;
-            for (Database.Error err : sr.getErrors()) {
-              if ((err.getStatusCode() + '') == 'OPERATION_ENQUEUED') {
-                isError = false;
-                break;
-              } else {
-                errorMessage +=
-                  err.getStatusCode() +
-                  ' - ' +
-                  err.getMessage() +
-                  '\n';
-                isError = true;
-              }
-            }
-            if (isError) {
-              dsr.Status__c = 'Failed';
-              update dsr;
-              throw new EventObjectException(errorMessage);
+        Map<String, Object> result = (Map<String, Object>) o.get('result');
+        dsr.Status__c = (String) result.get('policyFileStatus');
+        dsr.Policy_File_URL__c = (String) result.get('policyFileUrl');
+        dsr.Policy_File_Id__c = (String) result.get('policyFileId');
+        update dsr;
+        Data_Subject_Request_Event__e dsrEvent = new Data_Subject_Request_Event__e();
+        dsrEvent.DSR_ID__c = dsrId;
+        Database.SaveResult sr = Eventbus.publish(dsrEvent);
+        if (sr.getErrors().size() > 0) {
+          String errorMessage = '';
+          Boolean isError = false;
+          for (Database.Error err : sr.getErrors()) {
+            if ((err.getStatusCode() + '') == 'OPERATION_ENQUEUED') {
+              isError = false;
+              break;
+            } else {
+              errorMessage +=
+                err.getStatusCode() +
+                ' - ' +
+                err.getMessage() +
+                '\n';
+              isError = true;
             }
           }
-        } else {
-          System.debug(' httpResponse ' + response.getBody());
-          throw new CalloutException(response.getBody());
+          if (isError) {
+            dsr.Status__c = 'Failed';
+            update dsr;
+            throw new EventObjectException(errorMessage);
+          }
         }
       } else {
         System.debug(' httpResponse ' + response.getBody());
@@ -198,6 +179,7 @@ public with sharing class PortabilityPolicyService {
   }
 
   @future(callout=true)
+  @TestVisible
   private static void updateDSRStatus(String recordId) {
     try {
       Data_Subject_Request__c dsar = [
@@ -218,40 +200,35 @@ public with sharing class PortabilityPolicyService {
           Map<String, Object> o = (Map<String, Object>) JSON.deserializeUntyped(
             response.getBody()
           );
-          if (o.get('status') != 'Failure') {
-            Map<String, Object> result = (Map<String, Object>) o.get('result');
-            dsar.Status__c = (String) result.get('policyFileStatus');
-            dsar.Policy_File_URL__c = (String) result.get('policyFileUrl');
-            dsar.Policy_File_Id__c = (String) result.get('policyFileId');
-            update dsar;
-            Data_Subject_Request_Event__e dsrEvent = new Data_Subject_Request_Event__e();
-            dsrEvent.DSR_ID__c = dsar.Id;
-            Database.SaveResult sr = Eventbus.publish(dsrEvent);
-            if (sr.getErrors().size() > 0) {
-              String errorMessage = '';
-              Boolean isError = false;
-              for (Database.Error err : sr.getErrors()) {
-                if ((err.getStatusCode() + '') == 'OPERATION_ENQUEUED') {
-                  isError = false;
-                  break;
-                } else {
-                  errorMessage +=
-                    err.getStatusCode() +
-                    ' - ' +
-                    err.getMessage() +
-                    '\n';
-                  isError = true;
-                }
-              }
-              if (isError) {
-                dsar.Status__c = 'Failed';
-                update dsar;
-                throw new EventObjectException(errorMessage);
+          Map<String, Object> result = (Map<String, Object>) o.get('result');
+          dsar.Status__c = (String) result.get('policyFileStatus');
+          dsar.Policy_File_URL__c = (String) result.get('policyFileUrl');
+          dsar.Policy_File_Id__c = (String) result.get('policyFileId');
+          update dsar;
+          Data_Subject_Request_Event__e dsrEvent = new Data_Subject_Request_Event__e();
+          dsrEvent.DSR_ID__c = dsar.Id;
+          Database.SaveResult sr = Eventbus.publish(dsrEvent);
+          if (sr.getErrors().size() > 0) {
+            String errorMessage = '';
+            Boolean isError = false;
+            for (Database.Error err : sr.getErrors()) {
+              if ((err.getStatusCode() + '') == 'OPERATION_ENQUEUED') {
+                isError = false;
+                break;
+              } else {
+                errorMessage +=
+                  err.getStatusCode() +
+                  ' - ' +
+                  err.getMessage() +
+                  '\n';
+                isError = true;
               }
             }
-          } else {
-            System.debug(' httpResponse ' + response.getBody());
-            throw new CalloutException(response.getBody());
+            if (isError) {
+              dsar.Status__c = 'Failed';
+              update dsar;
+              throw new EventObjectException(errorMessage);
+            }
           }
         } else {
           System.debug(' httpResponse ' + response.getBody());
@@ -268,5 +245,24 @@ public with sharing class PortabilityPolicyService {
       Database.SaveResult sr = Eventbus.publish(dsrEvent);
       System.debug(e);
     }
+  }
+
+  @TestVisible
+  private static HttpResponse executeCallout(
+    String body,
+    String method,
+    String endPoint
+  ) {
+    HttpResponse response = new HttpResponse();
+    Http http = new Http();
+    HttpRequest request = new HttpRequest();
+    request.setMethod(method);
+    request.setEndpoint(endPoint);
+    request.setHeader('Authorization', 'OAuth ' + UserInfo.getSessionId());
+    request.setHeader('Authorization', 'Bearer ' + UserInfo.getSessionID());
+    request.setHeader('Content-Type', 'application/json;charset=UTF-8');
+    request.setBody(body);
+    response = http.send(request);
+    return response;
   }
 }
