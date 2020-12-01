@@ -21,12 +21,12 @@ Clone the GitHub repository and deploy to a demo org or scratch org with Privacy
 
 ### Post Installation Instructions
 
-1. Navigate to Setup and update the **Salesforce_Instance** Remote Site Setting to your demo org’s my domain URL.
+1. Navigate to Setup,  type  **Remote Site Settings** in the Quick Find box and update the **Salesforce_Instance** Remote Site Setting to your demo org’s my domain URL.
 2. Assign the **DSAR Perm Set** to required users.
 3. Create a Portability Policy if one doesn’t exist.
 4. You are all set.
 
-### Usage Instructions
+### Usage Instructions (See GIF for Visuals)
 
 1. Click on App Launcher and access the DSAR Manager App.
 2. Select a Portability Policy.
