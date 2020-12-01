@@ -12,7 +12,7 @@ This app requires a demo org with Privacy Center and Portability Policies enable
 Install the unlocked package in your org by accessing the following URL -
 https://login.salesforce.com/packaging/installPackage.apexp?p0=04t4x000000cY5bAAE
 
-**NOTE** The package requires Privacy Center to be enabled in your org. The package installation will fail if Privacy Center and the Portability Policy feature is not available in the org.
+**NOTE** This is an **Org Dependent unlocked package** (yes, we be usin’ the latest and greatest) and requires Privacy Center to be enabled in your org. The package installation will fail if Privacy Center and the Portability Policy feature is not available in the org. to be enabled in your org. The package installation will fail if Privacy Center and the Portability Policy feature is not available in the org.
 
 ### Option 2
 Clone the GitHub repository and deploy to a demo org or scratch org with Privacy Center enabled.
