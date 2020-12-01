@@ -2,29 +2,29 @@
 
 ![DSAR Manager Compressed](https://user-images.githubusercontent.com/7586106/100683126-8baed300-332c-11eb-8dc7-e5b5d13d8485.gif)
 
-## Pre Requisites
+### Pre Requisites
 
 This app requires a demo org with Privacy Center and Portability Policies enabled. The TA and Security Architect teams are working to make these available in the DXDO in the upcoming weeks. In the meanwhile you can use the License Editor within Blacktab to assign a **PrivacyCenter** add-on license to your demo org.
 
-## Installation Instructions
+### Installation Instructions
 
-## Option 1
+### Option 1
 Install the unlocked package in your org by accessing the following URL -
 https://login.salesforce.com/packaging/installPackage.apexp?p0=04t4x000000cY5bAAE
 **NOTE** The package requires Privacy Center to be enabled in your org. The package installation will fail if Privacy Center and the Portability Policy feature is not available in the org.
 
-## Option 2
+### Option 2
 Clone the GitHub repository and deploy to a demo org or scratch org with Privacy Center enabled.
 **NOTE** - There is no Feature setting for enabling Privacy Center in scratch orgs. Use the [Org Shape feature](https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_shape_intro.htm) to create a scratch org based on an org that has Privacy Center enabled.
 
-## Post Installation Instructions
+### Post Installation Instructions
 
 1. Navigate to Setup and update the **Salesforce_Instance** Remote Site Setting to your demo org’s my domain URL.
 2. Assign the **DSAR Perm Set** to required users.
 3. Create a Portability Policy if one doesn’t exist.
 4. You are all set.
 
-## Usage Instructions
+### Usage Instructions
 
 1. Click on App Launcher and access the DSAR Manager App.
 2. Select a Portability Policy.
@@ -38,7 +38,7 @@ Clone the GitHub repository and deploy to a demo org or scratch org with Privacy
 10. Click on the **Policy File URL** for that DSAR record. The policy file will download to your machine.
 11. Open the file and show the contents of the file to the demo audience.
 
-## Salesforce DX References
+### Salesforce DX References
 
 - [Salesforce Extensions Documentation](https://developer.salesforce.com/tools/vscode/)
 - [Salesforce CLI Setup Guide](https://developer.salesforce.com/docs/atlas.en-us.sfdx_setup.meta/sfdx_setup/sfdx_setup_intro.htm)
