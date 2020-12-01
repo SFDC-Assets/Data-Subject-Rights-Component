@@ -15,7 +15,7 @@ https://login.salesforce.com/packaging/installPackage.apexp?p0=04t4x000000cY5bAA
 
 ## Option 2
 Clone the GitHub repository and deploy to a demo org or scratch org with Privacy Center enabled.
-**NOTE** - There is no Feature setting for enabling Privacy Center in scratch orgs. Use the [Org Shape feature] (https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_shape_intro.htm) to create a scratch org based on an org that has Privacy Center enabled.
+**NOTE** - There is no Feature setting for enabling Privacy Center in scratch orgs. Use the [Org Shape feature](https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_shape_intro.htm) to create a scratch org based on an org that has Privacy Center enabled.
 
 ## Post Installation Instructions
 
