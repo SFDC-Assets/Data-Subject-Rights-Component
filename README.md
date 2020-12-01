@@ -11,10 +11,12 @@ This app requires a demo org with Privacy Center and Portability Policies enable
 ### Option 1
 Install the unlocked package in your org by accessing the following URL -
 https://login.salesforce.com/packaging/installPackage.apexp?p0=04t4x000000cY5bAAE
+
 **NOTE** The package requires Privacy Center to be enabled in your org. The package installation will fail if Privacy Center and the Portability Policy feature is not available in the org.
 
 ### Option 2
 Clone the GitHub repository and deploy to a demo org or scratch org with Privacy Center enabled.
+
 **NOTE** - There is no Feature setting for enabling Privacy Center in scratch orgs. Use the [Org Shape feature](https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_shape_intro.htm) to create a scratch org based on an org that has Privacy Center enabled.
 
 ### Post Installation Instructions
